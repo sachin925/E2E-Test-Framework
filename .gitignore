@@ -1,0 +1,42 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# Robot Framework output
+results/
+reports/
+output.xml
+log.html
+report.html
+*.swp
+*.swo
+
+# Allure
+allure-report/
+allure-results/
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.local
+
+# Test artifacts
+screenshots/
+downloads/

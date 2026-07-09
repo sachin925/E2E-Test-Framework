@@ -1,0 +1,37 @@
+# Robocop configuration for Robot Framework linting
+# https://robocop.readthedocs.io/
+
+# Include all rules by default
+include = ['*']
+
+# Exclude rules that are too strict for this project
+exclude = [
+    'too-many-calls-in-keyword',    # Allow long keywords
+    'too-long-keyword',             # Allow long keyword names
+    'too-many-arguments',           # Allow keywords with many arguments
+    'missing-doc-keyword',          # Don't require doc for all keywords
+    'missing-doc-test-case',        # Don't require doc for all test cases
+]
+
+# Configure specific rules
+configure = [
+    'line-too-long:line_length:120',
+    'too-few-calls-in-test-case:min_calls:1',
+    'tag-already-set-in-test-tags:enabled:false',
+]
+
+# Output format
+format = "{source}:{line}:{col} [{severity}] {rule_id} {desc}"
+
+# Output file for reports
+output = None
+
+# Return code threshold (error returns non-zero)
+threshold = 'E'
+
+# Ignore paths
+ignore = [
+    'results/**',
+    'reports/**',
+    'venv/**',
+]

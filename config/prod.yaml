@@ -1,0 +1,37 @@
+# Production Environment Configuration
+
+environment: prod
+
+# UI Configuration
+ui:
+  base_url: "https://www.booking.com"
+  browser: chrome
+  headless: true
+  implicit_wait: 10
+  explicit_wait: 30
+  page_load_timeout: 60
+
+# API Configuration
+api:
+  base_url: "https://distribution-xml.booking.com/2.0"
+  auth_url: "https://distribution-xml.booking.com/2.0/json/auth"
+  timeout: 30
+
+# Test Data
+test_data:
+  default_location: "Paris"
+  default_checkin_days: 7
+  default_stay_duration: 3
+  default_adults: 2
+  default_rooms: 1
+
+# Browser Options (optimized for production testing)
+browser_options:
+  chrome:
+    arguments:
+      - "--headless"
+      - "--disable-extensions"
+      - "--disable-gpu"
+      - "--no-sandbox"
+      - "--disable-dev-shm-usage"
+      - "--window-size=1920,1080"

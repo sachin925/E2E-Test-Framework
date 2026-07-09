@@ -1,0 +1,36 @@
+# Staging Environment Configuration
+
+environment: staging
+
+# UI Configuration
+ui:
+  base_url: "https://staging.booking.com"
+  browser: chrome
+  headless: true
+  implicit_wait: 10
+  explicit_wait: 30
+  page_load_timeout: 60
+
+# API Configuration
+api:
+  base_url: "https://staging-api.booking.com/v2"
+  auth_url: "https://staging-api.booking.com/v2/auth"
+  timeout: 30
+
+# Test Data
+test_data:
+  default_location: "Paris"
+  default_checkin_days: 7
+  default_stay_duration: 3
+  default_adults: 2
+  default_rooms: 1
+
+# Browser Options
+browser_options:
+  chrome:
+    arguments:
+      - "--headless"
+      - "--disable-extensions"
+      - "--disable-gpu"
+      - "--no-sandbox"
+      - "--disable-dev-shm-usage"

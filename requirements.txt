@@ -1,0 +1,35 @@
+# Robot Framework Core
+robotframework>=7.0
+robotframework-pythonlibcore>=4.0
+
+# Browser Automation
+robotframework-seleniumlibrary>=6.0
+selenium>=4.15.0
+webdriver-manager>=4.0
+
+# API Testing
+robotframework-requests>=0.9
+requests>=2.31.0
+
+# Parallel Execution
+robotframework-pabot>=2.17
+
+# Reporting
+allure-robotframework>=2.13
+robotframework-retryfailed>=0.2
+
+# Code Quality
+robocop>=5.0
+robotframework-tidy>=4.0
+ruff>=0.1.0
+
+# Configuration
+pyyaml>=6.0
+python-dotenv>=1.0
+
+# Task Runner
+invoke>=2.2
+
+# Utilities
+faker>=20.0
+jsonschema>=4.20

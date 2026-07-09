@@ -1,0 +1,242 @@
+pipeline {
+    agent any
+
+    environment {
+        // Environment configuration
+        TEST_ENV = "${params.ENVIRONMENT ?: 'dev'}"
+        BROWSER = "${params.BROWSER ?: 'chrome'}"
+        HEADLESS = "${params.HEADLESS ?: 'true'}"
+
+        // Paths
+        WORKSPACE_PATH = "${WORKSPACE}"
+        VENV_PATH = "${WORKSPACE}/venv"
+        RESULTS_PATH = "${WORKSPACE}/results"
+        ALLURE_RESULTS = "${WORKSPACE}/results/allure"
+
+        // Credentials (configure in Jenkins)
+        API_CREDENTIALS = credentials('booking-api-credentials')
+    }
+
+    parameters {
+        choice(
+            name: 'ENVIRONMENT',
+            choices: ['dev', 'staging', 'prod'],
+            description: 'Target test environment'
+        )
+        choice(
+            name: 'BROWSER',
+            choices: ['chrome', 'firefox', 'edge'],
+            description: 'Browser for UI tests'
+        )
+        booleanParam(
+            name: 'HEADLESS',
+            defaultValue: true,
+            description: 'Run browser in headless mode'
+        )
+        booleanParam(
+            name: 'RUN_API_TESTS',
+            defaultValue: true,
+            description: 'Run API test suite'
+        )
+        booleanParam(
+            name: 'RUN_UI_TESTS',
+            defaultValue: true,
+            description: 'Run UI test suite'
+        )
+        string(
+            name: 'TAGS',
+            defaultValue: '',
+            description: 'Robot Framework tags to run (comma-separated)'
+        )
+        string(
+            name: 'PARALLEL_PROCESSES',
+            defaultValue: '4',
+            description: 'Number of parallel processes for pabot'
+        )
+    }
+
+    stages {
+        stage('Setup') {
+            steps {
+                echo 'Setting up test environment...'
+                sh '''
+                    # Create virtual environment if not exists
+                    if [ ! -d "${VENV_PATH}" ]; then
+                        python3 -m venv ${VENV_PATH}
+                    fi
+
+                    # Activate and install dependencies
+                    . ${VENV_PATH}/bin/activate
+                    pip install --upgrade pip
+                    pip install -r requirements.txt
+
+                    # Create results directory
+                    mkdir -p ${RESULTS_PATH}
+                    mkdir -p ${ALLURE_RESULTS}
+                '''
+            }
+        }
+
+        stage('Lint') {
+            steps {
+                echo 'Running code quality checks...'
+                sh '''
+                    . ${VENV_PATH}/bin/activate
+
+                    # Lint Robot files
+                    robocop tests/ --output ${RESULTS_PATH}/robocop-report.txt || true
+
+                    # Lint Python files
+                    ruff check libraries/ --output ${RESULTS_PATH}/ruff-report.txt || true
+                '''
+            }
+        }
+
+        stage('API Tests') {
+            when {
+                expression { params.RUN_API_TESTS }
+            }
+            steps {
+                echo 'Running API tests...'
+                sh '''
+                    . ${VENV_PATH}/bin/activate
+
+                    # Set environment variables
+                    export ENVIRONMENT=${TEST_ENV}
+                    export API_USERNAME=${API_CREDENTIALS_USR}
+                    export API_PASSWORD=${API_CREDENTIALS_PSW}
+
+                    # Run API tests
+                    robot \
+                        --outputdir ${RESULTS_PATH}/api \
+                        --listener allure_robotframework:${ALLURE_RESULTS} \
+                        --include api \
+                        --exclude skip \
+                        --logtitle "API Test Log" \
+                        --reporttitle "API Test Report" \
+                        tests/api/
+                '''
+            }
+            post {
+                always {
+                    // Archive API test results
+                    archiveArtifacts artifacts: 'results/api/**', allowEmptyArchive: true
+                }
+            }
+        }
+
+        stage('UI Tests') {
+            when {
+                expression { params.RUN_UI_TESTS }
+            }
+            parallel {
+                stage('UI - Chrome') {
+                    when {
+                        expression { params.BROWSER == 'chrome' || params.BROWSER == 'all' }
+                    }
+                    steps {
+                        echo 'Running UI tests on Chrome...'
+                        sh '''
+                            . ${VENV_PATH}/bin/activate
+
+                            export ENVIRONMENT=${TEST_ENV}
+                            export BROWSER=chrome
+                            export HEADLESS=${HEADLESS}
+
+                            # Run UI tests with pabot for parallel execution
+                            pabot \
+                                --processes ${PARALLEL_PROCESSES} \
+                                --outputdir ${RESULTS_PATH}/ui/chrome \
+                                --listener allure_robotframework:${ALLURE_RESULTS} \
+                                --include ui \
+                                --exclude skip \
+                                --logtitle "UI Test Log - Chrome" \
+                                --reporttitle "UI Test Report - Chrome" \
+                                tests/ui/
+                        '''
+                    }
+                }
+
+                stage('UI - Firefox') {
+                    when {
+                        expression { params.BROWSER == 'firefox' || params.BROWSER == 'all' }
+                    }
+                    steps {
+                        echo 'Running UI tests on Firefox...'
+                        sh '''
+                            . ${VENV_PATH}/bin/activate
+
+                            export ENVIRONMENT=${TEST_ENV}
+                            export BROWSER=firefox
+                            export HEADLESS=${HEADLESS}
+
+                            pabot \
+                                --processes ${PARALLEL_PROCESSES} \
+                                --outputdir ${RESULTS_PATH}/ui/firefox \
+                                --listener allure_robotframework:${ALLURE_RESULTS} \
+                                --include ui \
+                                --exclude skip \
+                                --logtitle "UI Test Log - Firefox" \
+                                --reporttitle "UI Test Report - Firefox" \
+                                tests/ui/
+                        '''
+                    }
+                }
+            }
+            post {
+                always {
+                    // Archive UI test results and screenshots
+                    archiveArtifacts artifacts: 'results/ui/**', allowEmptyArchive: true
+                }
+            }
+        }
+
+        stage('Generate Reports') {
+            steps {
+                echo 'Generating test reports...'
+                script {
+                    // Generate Allure report
+                    allure includeProperties: false, jdk: '', results: [[path: "${ALLURE_RESULTS}"]]
+
+                    // Publish HTML reports
+                    publishHTML target: [
+                        allowMissing: true,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: "${RESULTS_PATH}",
+                        reportFiles: '*/log.html, */report.html',
+                        reportName: 'Robot Framework Reports'
+                    ]
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Cleaning up...'
+            // Clean up old results (keep last 10 builds)
+            cleanWs cleanWhenSuccess: true, cleanWhenFailure: false
+        }
+
+        success {
+            echo '✅ All tests passed successfully!'
+            // Send success notification (configure as needed)
+            // emailext subject: 'Test Execution Success',
+            //         body: 'All tests passed.',
+            //         to: 'team@example.com'
+        }
+
+        failure {
+            echo '❌ Tests failed!'
+            // Send failure notification
+            // emailext subject: 'Test Execution Failed',
+            //         body: "Tests failed. Check ${BUILD_URL}",
+            //         to: 'team@example.com'
+        }
+
+        unstable {
+            echo '⚠️ Tests completed with warnings'
+        }
+    }
+}
