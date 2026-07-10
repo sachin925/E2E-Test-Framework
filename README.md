@@ -116,7 +116,7 @@ The framework includes a Jenkinsfile for CI/CD integration:
    - Git
 
 2. Create a new Pipeline job
-3. Point to the Jenkinsfile in `jenkins/Jenkinsfile`
+3. Point to the Jenkinsfile in `CI/Jenkinsfile`
 
 ## Writing Tests
 

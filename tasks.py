@@ -127,7 +127,7 @@ def setup(ctx, upgrade=False):
 
     # Install requirements
     print("  Installing dependencies...")
-    ctx.run(f"{pip_cmd} install -r requirements.txt")
+    ctx.run(f"{pip_cmd} install -r CI/requirements.txt")
 
     # Create directories
     print("  Creating directories...")
@@ -753,6 +753,10 @@ def help(ctx):
     print("  invoke regression               # Run full regression")
     print("  invoke report                   # Generate Allure report")
     print("  invoke lint                     # Run code quality checks")
+    print("  invoke lint --fix               # Auto-fix linting issues")
+    print("  invoke lint --strict            # Treat warnings as errors")
+    print("  invoke validate                 # Validate framework structure")
+    print("  invoke check-deps               # Check dependencies")
     print("  invoke clean                    # Clean results")
     print("  invoke info                     # Show environment info")
 

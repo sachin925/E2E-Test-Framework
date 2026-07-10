@@ -131,9 +131,9 @@ E2E-Test-Framework/
 │   ├── dev.yaml
 │   ├── staging.yaml
 │   └── prod.yaml
-├── jenkins/                  # Jenkins configurations
-│   └── Jenkinsfile
-├── requirements.txt          # Python dependencies
+├── CI/                       # CI/CD configurations
+│   ├── Jenkinsfile
+│   └── requirements.txt
 ├── setup.py                  # Package setup
 └── README.md
 ```
